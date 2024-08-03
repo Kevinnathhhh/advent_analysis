@@ -1,9 +1,6 @@
-// components/Login.js
-
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
 import {
   FormControl,
   FormLabel,
@@ -13,18 +10,22 @@ import {
   Flex,
   Box,
   useToast,
+  Image, // Import komponen Image dari Chakra UI
 } from "@chakra-ui/react";
 import { axiosInstance } from "@/lib/axios";
+import logoBase64 from "@/features/components/logo";
+
+const logo = logoBase64;
 
 const loginUser = async (credentials) => {
   try {
     const response = await axiosInstance.post("/auth/login", credentials);
-    console.log(response);
     const token = response.data.token;
+    const role = credentials.role; // Ambil role dari credentials
     localStorage.setItem("token", token); // Simpan token di localStorage
-    return token;
+    localStorage.setItem("role", role); // Simpan role di localStorage
+    return { token, role }; // Kembalikan token dan role
   } catch (error) {
-    console.log("Error", error);
     if (error.response && error.response.data) {
       throw new Error(error.response.data.error || "Login failed");
     } else {
@@ -38,15 +39,19 @@ const Login = () => {
   const toast = useToast();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState(""); // State untuk role
 
   const mutation = useMutation({
     mutationFn: loginUser,
-    onSuccess: (data) => {
-      localStorage.setItem("token", data); // Simpan token di localStorage
-      router.push(`/dashboard`); // Redirect setelah login
+    onSuccess: ({ role }) => {
+      // Redirect berdasarkan role
+      if (role === "Admin") {
+        router.push(`/teacher/dashboard`);
+      } else if (role === "Headmaster") {
+        router.push(`/headmaster/dashboard`);
+      }
     },
     onError: (error) => {
-      console.error("Login failed:", error);
       toast({
         title: "Login Failed",
         description: error.message || "Login failed",
@@ -59,7 +64,7 @@ const Login = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    mutation.mutate({ username, password });
+    mutation.mutate({ username, password, role });
   };
 
   return (
@@ -70,7 +75,18 @@ const Login = () => {
         borderWidth={1}
         borderRadius={8}
         boxShadow="lg"
+        textAlign="center" // Agar logo dan form berada di tengah
       >
+        {/* Menambahkan logo di atas form */}
+        <Image
+          src={logo}
+          alt="Logo"
+          boxSize="100px" // Ukuran logo, sesuaikan dengan kebutuhan
+          mb={4} // Jarak antara logo dan form
+          mx="auto" // Menyusun logo di tengah
+          boxShadow="0 4px 6px rgba(0, 0, 0, 0.1)" // Menambahkan shadow
+          borderRadius="100%"
+        />
         <form onSubmit={handleSubmit}>
           <FormControl>
             <FormLabel>Username</FormLabel>
@@ -88,7 +104,17 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
             />
           </FormControl>
-          
+          <FormControl mt={4}>
+            <FormLabel>Role</FormLabel>
+            <Select
+              placeholder="Select role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+            >
+              <option value="Admin">Admin</option>
+              <option value="Headmaster">Headmaster</option>
+            </Select>
+          </FormControl>
           <Button
             mt={4}
             colorScheme="teal"

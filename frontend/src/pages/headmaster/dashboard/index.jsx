@@ -15,6 +15,7 @@ import {
   Icon,
   useColorModeValue,
 } from "@chakra-ui/react";
+import Link from "next/link";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { axiosInstance } from "@/lib/axios";
@@ -29,11 +30,17 @@ export default function Dashboard() {
     if (!token) {
       router.push("/login");
     } else {
-      axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      axiosInstance.defaults.headers.common[
+        "Authorization"
+      ] = `Bearer ${token}`;
     }
   }, [router]);
 
-  const { data: eligibleData, isLoading: isLoadingEligible, error: errorEligible } = useQuery({
+  const {
+    data: eligibleData,
+    isLoading: isLoadingEligible,
+    error: errorEligible,
+  } = useQuery({
     queryKey: ["eligibles"],
     queryFn: async () => {
       try {
@@ -46,7 +53,11 @@ export default function Dashboard() {
     },
   });
 
-  const { data: packageData, isLoading: isLoadingPackage, error: errorPackage } = useQuery({
+  const {
+    data: packageData,
+    isLoading: isLoadingPackage,
+    error: errorPackage,
+  } = useQuery({
     queryKey: ["packages"],
     queryFn: async () => {
       try {
@@ -87,7 +98,7 @@ export default function Dashboard() {
   return (
     <>
       <Head>
-        <title>Dashboard</title>
+        <title>Headmaster Dashboard</title>
         <meta name="description" content="Dashboard page" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -95,7 +106,7 @@ export default function Dashboard() {
       <main>
         <Container maxW="4xl" py={10}>
           <VStack spacing={6} align="stretch">
-            <Heading mb={6}>Dashboard</Heading>
+            <Heading mb={6}>Headmaster Dashboard</Heading>
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
               <Stat
                 p={5}
@@ -104,14 +115,27 @@ export default function Dashboard() {
                 borderRadius="lg"
                 bg={cardBgColor}
               >
-                <Box display="flex" alignItems="center">
-                  <Icon as={FaGraduationCap} w={10} h={10} mr={4} color={textColor} />
-                  <Box>
-                    <StatLabel color={textColor}>Total Siswa Eligible</StatLabel>
-                    <StatNumber color={textColor}>{totalEligibleStudents}</StatNumber>
+                <Link href="/headmaster/eligible" passHref>
+                  <Box display="flex" alignItems="center" as="a">
+                    <Icon
+                      as={FaGraduationCap}
+                      w={10}
+                      h={10}
+                      mr={4}
+                      color={textColor}
+                    />
+                    <Box>
+                      <StatLabel color={textColor}>
+                        Total Siswa Eligible
+                      </StatLabel>
+                      <StatNumber color={textColor}>
+                        {totalEligibleStudents}
+                      </StatNumber>
+                    </Box>
                   </Box>
-                </Box>
+                </Link>
               </Stat>
+
               <Stat
                 p={5}
                 shadow="md"
@@ -119,13 +143,19 @@ export default function Dashboard() {
                 borderRadius="lg"
                 bg={cardBgColorPackage}
               >
-                <Box display="flex" alignItems="center">
-                  <Icon as={FaUsers} w={10} h={10} mr={4} color={textColor} />
-                  <Box>
-                    <StatLabel color={textColor}>Total Siswa dalam Paket</StatLabel>
-                    <StatNumber color={textColor}>{totalPackageStudents}</StatNumber>
+                <Link href="/headmaster/package" passHref>
+                  <Box display="flex" alignItems="center" as="a">
+                    <Icon as={FaUsers} w={10} h={10} mr={4} color={textColor} />
+                    <Box>
+                      <StatLabel color={textColor}>
+                        Total Siswa dalam Paket
+                      </StatLabel>
+                      <StatNumber color={textColor}>
+                        {totalPackageStudents}
+                      </StatNumber>
+                    </Box>
                   </Box>
-                </Box>
+                </Link>
               </Stat>
             </SimpleGrid>
           </VStack>

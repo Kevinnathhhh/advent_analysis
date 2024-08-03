@@ -46,6 +46,7 @@ import autoTable from "jspdf-autotable";
 import { axiosInstance } from "@/lib/axios";
 import { useRouter } from "next/router";
 import AddStudentModal from "@/features/components/AddStudentModal";
+import logoBase64 from "@/features/components/logo";
 
 export default function Package() {
   const router = useRouter();
@@ -255,50 +256,73 @@ export default function Package() {
     },
   });
 
+  const logo = logoBase64;
   const exportToPDF = () => {
     const doc = new jsPDF("landscape");
-
+  
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+  
+    // Menambahkan logo
+    const logoWidth = 80;
+    const logoHeight = 80;
+    const logoX = pageWidth / 2 - logoWidth / 2;
+    const logoY = 40;
+  
+    doc.addImage(logo, "PNG", logoX, logoY, logoWidth, logoHeight);
+  
+    // Menambahkan teks di bawah logo
+    const textY = logoY + logoHeight + 20; // Menambahkan jarak 20 piksel di bawah logo
+    doc.setFontSize(24);
+    doc.text("Student Report", pageWidth / 2, textY, { align: "center" });
+  
+    // Menambahkan teks tanggal di bawah judul
+    const dateY = textY + 30; // Menambahkan jarak 30 piksel di bawah judul
+    doc.setFontSize(16);
+    doc.text(
+      "Generated on: " + new Date().toLocaleDateString(),
+      pageWidth / 2,
+      dateY,
+      { align: "center" }
+    );
+  
+    // Tambahkan halaman baru untuk tabel
+    doc.addPage();
+  
     autoTable(doc, {
-      head: [
-        [
-          "ID",
-          "Name",
-          "NIS",
-          "Fisika",
-          "Ekonomi",
-          "Geografi",
-          "Sosiologi",
-          "Matematika",
-          "Informatika",
-          "Biologi",
-          "Kimia",
-          "P1",
-          "P2",
-          "P3",
-          "Rec",
-        ],
-      ],
+      head: [["ID", "Name", "NIS", "P1", "P2", "P3", "Rec", "Approvals"]],
       body: data.map((student) => [
         student.student_package_id,
         student.name,
         student.nis,
-        student.fisika,
-        student.ekonomi,
-        student.geografi,
-        student.sosiologi,
-        student.matematika,
-        student.informatika,
-        student.biologi,
-        student.kimia,
         student.paket1,
         student.paket2,
         student.paket3,
         student.recommendation_teacher,
+        student.principal_approval,
       ]),
+      margin: { bottom: 50 }, // Menyediakan ruang untuk tanda tangan
     });
-
-    doc.save("students.pdf");
+  
+    // Menambahkan area tanda tangan di bagian bawah kiri
+    const signatureBoxWidth = 80;
+    const signatureBoxHeight = 40;
+    const leftSignatureX = 20; // Jarak dari tepi kiri
+    const bottomSignatureY = pageHeight - 20 - signatureBoxHeight; // Jarak dari tepi bawah
+  
+    doc.setFontSize(12);
+    doc.text("Headmaster:", leftSignatureX, bottomSignatureY - 10); // Label untuk area tanda tangan
+    doc.rect(leftSignatureX, bottomSignatureY, signatureBoxWidth, signatureBoxHeight); // Kotak area tanda tangan
+  
+    // Menambahkan area tanda tangan di bagian bawah kanan
+    const rightSignatureX = pageWidth - 20 - signatureBoxWidth; // Jarak dari tepi kanan
+  
+    doc.text("Teacher:", rightSignatureX, bottomSignatureY - 10); // Label untuk area tanda tangan
+    doc.rect(rightSignatureX, bottomSignatureY, signatureBoxWidth, signatureBoxHeight); // Kotak area tanda tangan
+  
+    doc.save("Report Package Student.pdf");
   };
+
 
   const handleDeleteClick = (student) => {
     console.log("Delete clicked for student:", student);
@@ -403,14 +427,6 @@ export default function Package() {
           <Td>{student.student_package_id}</Td>
           <Td>{student.name}</Td>
           <Td>{student.nis}</Td>
-          <Td>{student.fisika}</Td>
-          <Td>{student.ekonomi}</Td>
-          <Td>{student.geografi}</Td>
-          <Td>{student.sosiologi}</Td>
-          <Td>{student.matematika}</Td>
-          <Td>{student.informatika}</Td>
-          <Td>{student.biologi}</Td>
-          <Td>{student.kimia}</Td>
           <Td>{student.paket1}</Td>
           <Td>{student.paket2}</Td>
           <Td>{student.paket3}</Td>
@@ -428,25 +444,13 @@ export default function Package() {
               <option value="P3">Paket 3</option>
             </Select>
           </Td>
-
-          <Td>
-            <Checkbox
-              isChecked={isChecked}
-              onChange={(e) => handleApprovalChange(student, e.target.checked)}
-            >
-              {student.principal_approval}
-            </Checkbox>
-          </Td>
-          <Td>
-            <IconButton
-              aria-label="Delete student"
-              icon={<FaTrash />}
-              onClick={() => handleDeleteClick(student)}
-            />
-          </Td>
         </Tr>
       );
     });
+  };
+
+  const handleClick = () => {
+    router.push("/teacher/result");
   };
 
   const handleSuccess = () => {
@@ -462,26 +466,10 @@ export default function Package() {
         <VStack spacing={4} mb={4} align="start">
           <Heading>Student Package List</Heading>
           <HStack spacing={4}>
-            <Button
-              colorScheme="blue"
-              onClick={onUploadOpen}
-              leftIcon={<FaUpload />}
-            >
-              Upload File
-            </Button>
-            <Button colorScheme="red" onClick={onDeleteAllOpen}>
-              Delete All Students
-            </Button>
-            <Button colorScheme="teal" onClick={exportToPDF}>
+            <Button mb={4} colorScheme="teal" onClick={exportToPDF}>
               Export to PDF
             </Button>
           </HStack>
-          <AddStudentModal
-            queryClient={queryClient}
-            isOpen={isAddStudentOpen}
-            onClose={onAddStudentClose}
-            onSuccess={handleSuccess}
-          />
         </VStack>
         {isLoading ? (
           <Center>
@@ -493,55 +481,31 @@ export default function Package() {
             Error: {error.message}
           </Alert>
         ) : (
-          <TableContainer>
-            <Table variant="simple">
+          <TableContainer maxHeight="60vh" overflowY="auto">
+            <Table variant="simple" colorScheme="teal">
               <Thead>
                 <Tr>
-                  <Th>Student ID</Th>
-                  <Th>Name</Th>
-                  <Th>NIS</Th>
-                  <Th>Fisika</Th>
-                  <Th>Ekonomi</Th>
-                  <Th>Geografi</Th>
-                  <Th>Sosiologi</Th>
-                  <Th>Matematika</Th>
-                  <Th>Informatika</Th>
-                  <Th>Biologi</Th>
-                  <Th>Kimia</Th>
-                  <Th>Package 1</Th>
-                  <Th>Package 2</Th>
-                  <Th>Package 3</Th>
-                  <Th>
+                  <Th position="sticky" top={0} bg="white" zIndex={1}>Student ID</Th>
+                  <Th position="sticky" top={0} bg="white" zIndex={1}>Name</Th>
+                  <Th position="sticky" top={0} bg="white" zIndex={1}>NIS</Th>
+                  <Th position="sticky" top={0} bg="white" zIndex={1}>Package 1</Th>
+                  <Th position="sticky" top={0} bg="white" zIndex={1}>Package 2</Th>
+                  <Th position="sticky" top={0} bg="white" zIndex={1}>Package 3</Th>
+                  <Th position="sticky" top={0} bg="white" zIndex={1}>
                     Recommendation
                     <IconButton
                       aria-label="Sort"
                       icon={
                         sortOrder === "asc" ? (
-                          <FaSortAlphaDown />
+                          <FaSortAlphaDown color="black" />
                         ) : (
-                          <FaSortAlphaUp />
+                          <FaSortAlphaUp color="black" />
                         )
                       }
                       onClick={() => handleSortBy("recommendation")}
                       ml={2}
                     />
                   </Th>
-                  <Th>
-                    Approval
-                    <IconButton
-                      aria-label="Sort"
-                      icon={
-                        sortOrder === "asc" ? (
-                          <FaSortAlphaDown />
-                        ) : (
-                          <FaSortAlphaUp />
-                        )
-                      }
-                      onClick={() => handleSortBy("approval")}
-                      ml={2}
-                    />
-                  </Th>
-                  <Th>Actions</Th>
                 </Tr>
               </Thead>
               <Tbody>{renderStudents()}</Tbody>
