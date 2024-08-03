@@ -14,32 +14,39 @@ model Admin {
   password String
 }
 
-model Student_Package {
-  student_package_id             Int    @id @default(autoincrement())
-  name                   String @unique
-  nis                    Int    @unique
-  fisika                 Int
-  ekonomi                Int
-  geografi               Int
-  sosiologi              Int
-  matematika             Int
-  informatika            Int
-  biologi                Int
-  kimia                  Int
-  recommendation_teacher String @default("none")
-  principal_approval     String @default("not yet")
+model Headmaster {
+  headmaster_id Int @id @default(autoincrement())
+  username      String @unique
+  password      String
 }
 
-model Student_Eligible{
-  student_eligible_id Int @id @default(autoincrement())
-  name String @unique
-  nis Int @unique
-  jurusan String 
-  nilaisemester1 Float
-  nilaisemester2 Float
-  nilaisemester3 Float
-  nilaisemester4 Float
-  nilaisemester5 Float 
-  approval String @default("not yet")
-  createdAt DateTime @default(now())
+model Student_Package {
+  student_package_id    Int    @id @default(autoincrement())
+  name                  String @unique
+  nis                   Int    @unique
+  fisika                Int
+  ekonomi               Int
+  geografi              Int
+  sosiologi             Int
+  matematika            Int
+  informatika           Int
+  biologi               Int
+  kimia                 Int
+  recommendation_teacher String @default("none")
+  principal_approval    String @default("not yet")
+}
+
+model Student_Eligible {
+  student_eligible_id Int     @id @default(autoincrement())
+  name                String  @unique
+  nis                 Int     @unique
+  jurusan             String 
+  nilaisemester1      Float
+  nilaisemester2      Float
+  nilaisemester3      Float
+  nilaisemester4      Float
+  nilaisemester5      Float 
+  recommendation_teacher String @default("none")
+  approval            String  @default("not yet")
+  createdAt           DateTime @default(now())
 }

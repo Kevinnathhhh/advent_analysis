@@ -4,7 +4,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const prisma = require("../db/index");
-const { authenticateJWT } = require("../auth/auth.middleware");
+const { authenticateJWT, authorizeRoles } = require("../auth/auth.middleware");
 
 // Konfigurasi multer
 const upload = multer({ dest: 'uploads/' });
@@ -20,13 +20,13 @@ const {
 } = require("./eligible.service");
 
 // Endpoint untuk mendapatkan semua data siswa
-router.get("/", authenticateJWT, async (req, res) => {
+router.get("/", authenticateJWT, authorizeRoles("Admin", "Headmaster"), async (req, res) => {
     const students = await getAllStudents();
     return res.send(students);
 });
 
 // Endpoint untuk mendapatkan data siswa berdasarkan ID
-router.get("/student/:id", authenticateJWT, async (req, res) => {
+router.get("/student/:id", authenticateJWT, authorizeRoles("Admin", "Headmaster"), async (req, res) => {
     const studentId = parseInt(req.params.id);
     const student = await getStudentById(studentId);
 
@@ -37,13 +37,13 @@ router.get("/student/:id", authenticateJWT, async (req, res) => {
 });
 
 // Endpoint untuk mendapatkan hasil
-router.get("/results", authenticateJWT, async (req, res) => {
+router.get("/results", authenticateJWT, authorizeRoles("Admin", "Headmaster"), async (req, res) => {
     const students = await getAllResults();
     return res.send(students);
 });
 
 // Endpoint untuk menambahkan data siswa
-router.post("/students", authenticateJWT, async (req, res) => {
+router.post("/students", authenticateJWT, authorizeRoles("Admin", "Headmaster"), async (req, res) => {
     try {
         const newStudent = req.body;
         if (
@@ -73,14 +73,14 @@ router.post("/students", authenticateJWT, async (req, res) => {
 });
 
 // Endpoint untuk menghapus data siswa
-router.delete("/student/:id", authenticateJWT, async (req, res) => {
+router.delete("/student/:id", authenticateJWT, authorizeRoles("Admin", "Headmaster"), async (req, res) => {
     const student_id = parseInt(req.params.id);
     await deleteStudent(student_id);
     res.send("Data student berhasil dihapus");
 });
 
 // Endpoint untuk memperbarui data siswa
-router.patch("/student/:id", authenticateJWT, async (req, res) => {
+router.patch("/student/:id", authenticateJWT, authorizeRoles("Admin", "Headmaster"), async (req, res) => {
     const student_id = parseInt(req.params.id);
     const dataStudent = req.body;
     const student = await updateStudentById(student_id, dataStudent);
@@ -91,7 +91,7 @@ router.patch("/student/:id", authenticateJWT, async (req, res) => {
 });
 
 // Endpoint untuk mengunggah file Excel
-router.post('/upload', authenticateJWT, upload.single('file'), async (req, res) => {
+router.post('/upload', authenticateJWT, authorizeRoles("Admin", "Headmaster"), upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).send('No file uploaded.');
@@ -109,7 +109,7 @@ router.post('/upload', authenticateJWT, upload.single('file'), async (req, res) 
     }
 });
 
-router.post('/eligibles/upload', upload.single('file'), async (req, res) => {
+router.post('/eligibles/upload', authorizeRoles("Admin", "Headmaster"), upload.single('file'), async (req, res) => {
     try {
       const file = req.file;
       if (!file) {
@@ -144,7 +144,7 @@ router.post('/eligibles/upload', upload.single('file'), async (req, res) => {
     }
   });
 
-  router.delete('/students', async (req, res) => {
+  router.delete('/students', authorizeRoles("Admin", "Headmaster"), async (req, res) => {
     try {
       await prisma.student_Eligible.deleteMany(); // Menghapus semua siswa
       res.status(200).json({ message: 'All students deleted successfully' });

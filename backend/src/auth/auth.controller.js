@@ -8,20 +8,32 @@ const router = express.Router();
 
 router.post("/register", async (req, res) => {
     try {
-        const { username, password} = req.body;
+        const { username, password, role } = req.body;
 
-        if (!username || !password){
+        if (!username || !password || !role) {
             return res.status(400).send("Lengkapi Data User");
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const newUser = await prisma.admin.create({
-            data: {
-                username,
-                password: hashedPassword,
-            },
-        });
+        let newUser;
+        if (role === 'Admin') {
+            newUser = await prisma.admin.create({
+                data: {
+                    username,
+                    password: hashedPassword,
+                },
+            });
+        } else if (role === 'Headmaster') {
+            newUser = await prisma.headmaster.create({
+                data: {
+                    username,
+                    password: hashedPassword,
+                },
+            });
+        } else {
+            return res.status(400).send("Peran tidak valid");
+        }
 
         res.status(201).json({
             data: newUser,
@@ -33,37 +45,47 @@ router.post("/register", async (req, res) => {
         res.status(500).send({
             message: "Server Error",
             error: error.message,
-        })
-        
+        });
     }
 });
 
+
 router.post("/login", async (req, res) => {
-    const {username, password} = req.body;
+    const { username, password, role } = req.body;
 
     try {
-        const user = await prisma.admin.findUnique({
-            where: {username}
-        })
-
-        if (!user){
-            return res.status(401).json({error: "Invalid username or password"});
+        let user;
+        if (role === 'Admin') {
+            user = await prisma.admin.findUnique({
+                where: { username },
+            });
+        } else if (role === 'Headmaster') {
+            user = await prisma.headmaster.findUnique({
+                where: { username },
+            });
+        } else {
+            return res.status(400).json({ error: "Peran tidak valid" });
         }
 
-        const validPassword =  await bcrypt.compare(password, user.password);
-        if(!validPassword){
-            return res.status(401).json({error: "Invalid username or password"});
+        if (!user) {
+            return res.status(401).json({ error: "Invalid username or password" });
         }
+
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) {
+            return res.status(401).json({ error: "Invalid username or password" });
+        }
+
         const token = jwt.sign(
-            { id: user.admin_id},
+            { id: role === 'Admin' ? user.admin_id : user.headmaster_id, role: role },
             process.env.JWT_SECRET,
-            { expiresIn: "1h"}
+            { expiresIn: "1h" }
         );
 
-        res.json({token});
+        res.json({ token });
 
     } catch (error) {
-        res.status(500).json({ error: error.message});
+        res.status(500).json({ error: error.message });
     }
 });
 

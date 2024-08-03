@@ -59,6 +59,7 @@ const updateStudent = async (studentId,dataStudent) => {
             nilaisemester4: dataStudent.nilaisemester4,
             nilaisemester5: dataStudent.nilaisemester5,
             approval: dataStudent.approval,
+            recommendation_teacher: dataStudent.recommendation_teacher,
             jurusan: dataStudent.jurusan,
             
         },
